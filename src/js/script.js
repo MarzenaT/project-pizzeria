@@ -74,6 +74,7 @@ const select = {
     getElements(){
       const thisProduct = this;
     
+      thisProduct.imageWrapper = thisProduct.element.querySelector(select.menuProduct.imageWrapper);
       thisProduct.accordionTrigger = thisProduct.element.querySelector(select.menuProduct.clickable);
       thisProduct.form = thisProduct.element.querySelector(select.menuProduct.form);
       thisProduct.formInputs = thisProduct.form.querySelectorAll(select.all.formInputs);
@@ -125,16 +126,26 @@ const select = {
       for(let paramId in thisProduct.data.params) {
         // determine param value, e.g. paramId = 'toppings', param = { label: 'Toppings', type: 'checkboxes'... }
         const param = thisProduct.data.params[paramId];
-        console.log(paramId, param);
     
         // for every option in this category
         for(let optionId in param.options) {
           // determine option value, e.g. optionId = 'olives', option = { label: 'Olives', price: 2, default: true }
+          const optionSelected = formData[paramId].includes(optionId);
           const option = param.options[optionId];
-          if(option.default && !formData[paramId].includes(optionId)) {
+          if(option.default && !optionSelected) {
             price -= option.price;
-          } else if (!option.default && formData[paramId].includes(optionId)) {
+          } else if (!option.default && optionSelected) {
             price += option.price;
+          }
+          const element = thisProduct.imageWrapper.querySelector(`.${paramId}-${optionId}`)
+          if(optionSelected) {       
+            if(element) {
+              element.classList.add(`active`);
+            }  
+          } else {
+            if(element) {
+              element.classList.remove(`active`);
+            }
           }
         }
       }

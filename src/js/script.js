@@ -137,6 +137,7 @@ const select = {
           } else if (!option.default && optionSelected) {
             price += option.price;
           }
+          console.log(price);
           const element = thisProduct.imageWrapper.querySelector(`.${paramId}-${optionId}`)
           if(optionSelected) {       
             if(element) {

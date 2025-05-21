@@ -205,7 +205,7 @@
     }
     addToCart() {
       const product = this.prepareCartProduct();
-      console.log(product);
+      //console.log(product);
       app.cart.add(product);
     }
     prepareCartProduct() {
@@ -225,15 +225,10 @@
       const thisProduct = this;
     
       const formData = utils.serializeFormToObject(thisProduct.form);
-      console.log('formData', formData);
       const params = {};
     
-      // for every category (param)...
       for(let paramId in thisProduct.data.params) {
-        // determine param value, e.g. paramId = 'toppings', param = { label: 'Toppings', type: 'checkboxes'... }
         const param = thisProduct.data.params[paramId];
-        console.log(param);
-        // for every option in this category
        
           params[paramId] = {
             label: param.label,
@@ -243,8 +238,6 @@
             // determine option value, e.g. optionId = 'olives', option = { label: 'Olives', price: 2, default: true }
             const optionSelected = formData[paramId].includes(optionId);
             const option = param.options[optionId];
-            console.log(optionSelected)
-            console.log(option);
             if(optionSelected) {
               params[paramId].options[optionId] = option.label;
             }
@@ -269,8 +262,6 @@
       }
       
       thisWidget.initActions();
-      console.log('Amount Widget: ', thisWidget);
-      console.log('element', element);
     }
 
     getElements(element){
@@ -301,7 +292,7 @@
     announce() {
       const thisWidget = this;
 
-      const event = new Event('updated');
+      const event = new CustomEvent('updated', {bubbles: true});
       thisWidget.element.dispatchEvent(event);
     }
 
@@ -333,7 +324,6 @@
 
       thisCart.getElements(element);
       thisCart.initActions();
-      console.log('new Cart', thisCart);
     }
 
     getElements(element) {
@@ -341,7 +331,13 @@
       thisCart.dom = {};
       thisCart.dom.wrapper = element;
       thisCart.dom.productList = thisCart.dom.wrapper.querySelector(select.cart.productList);
-      thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger)
+      thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger);
+      
+      thisCart.dom.deliveryFee  = thisCart.dom.wrapper.querySelectorAll(select.cart.deliveryFee);
+      thisCart.dom.subtotalPrice  = thisCart.dom.wrapper.querySelectorAll(select.cart.subtotalPrice);
+      thisCart.dom.totalPrice  = thisCart.dom.wrapper.querySelectorAll(select.cart.totalPrice);
+      thisCart.dom.totalNumber  = thisCart.dom.wrapper.querySelectorAll(select.cart.totalNumber);
+    
     }
 
     initActions() {
@@ -350,6 +346,20 @@
         event.preventDefault();
         thisCart.dom.wrapper.classList.toggle(classNames.cart.wrapperActive);
       });
+      thisCart.dom.productList.addEventListener('updated', function() {
+        thisCart.update();
+      });
+      thisCart.dom.productList.addEventListener('remove', function(event) {
+        thisCart.remove(event.detail.cartProduct);
+      });
+    }
+
+    remove(product) {
+      const thisCart = this;
+      const index = thisCart.products.indexOf(product);
+      thisCart.dom.productList.children[index].remove();
+      thisCart.products.splice(index, 1)
+      thisCart.update();
     }
 
     add(menuProduct) {
@@ -359,8 +369,94 @@
       const generatedDOM = utils.createDOMFromHTML(generatedHtml);
       thisCart.dom.productList.appendChild(generatedDOM);
 
+      thisCart.products.push(new CartProduct(menuProduct, generatedDOM));
+      thisCart.update();
       console.log('adding product', menuProduct)
     }
+
+    update() {
+      const thisCart = this;
+      
+      let totalNumber  = 0;
+      let subtotalPrice = 0;
+      for(const product of thisCart.products) {
+        subtotalPrice += product.price;
+        totalNumber += product.amount;
+      }
+      let deliveryFee = totalNumber > 0 ? settings.cart.defaultDeliveryFee : 0;
+      thisCart.totalPrice =  deliveryFee + subtotalPrice;
+
+      thisCart.dom.deliveryFee.forEach(elem => elem.innerHTML = deliveryFee)
+      thisCart.dom.subtotalPrice.forEach(elem => elem.innerHTML  = subtotalPrice)
+      thisCart.dom.totalPrice.forEach(elem => elem.innerHTML  = thisCart.totalPrice)
+      thisCart.dom.totalNumber.forEach(elem => elem.innerHTML  = totalNumber)
+    
+    }
+  }
+
+  class CartProduct {
+    constructor(menuProduct, element) {
+      const thisCartProduct = this;
+      const {id, name, amount, priceSingle, price, params} = menuProduct;
+      thisCartProduct.id = id;
+      thisCartProduct.name = name;
+      thisCartProduct.amount = amount;
+      thisCartProduct.priceSingle = priceSingle;
+      thisCartProduct.price = price;
+      thisCartProduct.params = params;
+
+      this.getElements(element);
+      this.initAmountWidget();
+      this.initActions();
+      console.log('new cardProduct', thisCartProduct)
+    }
+
+    getElements(element) {
+      const thisCartProduct = this;
+      thisCartProduct.dom = {};
+      thisCartProduct.dom.wrapper = element;
+      thisCartProduct.dom.amountWidget = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.amountWidget);
+      thisCartProduct.dom.price = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.price)
+      thisCartProduct.dom.edit = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.edit)
+      thisCartProduct.dom.remove = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.remove)
+   
+     }
+
+     initAmountWidget() {
+      const thisCartProduct = this;
+      thisCartProduct.amountWidget = new AmountWidget(thisCartProduct.dom.amountWidget );
+      thisCartProduct.dom.amountWidget.addEventListener('updated', function() {
+        const amount = thisCartProduct.amountWidget.value;
+        thisCartProduct.amount = amount;
+        thisCartProduct.price = amount * thisCartProduct.priceSingle;
+        thisCartProduct.dom.price.innerHTML = thisCartProduct.price
+      } )
+    }
+
+    remove() {
+      const thisCartProduct = this;
+
+      const event = new CustomEvent('remove', {
+        bubbles: true,
+        detail: {
+          cartProduct: thisCartProduct
+        }
+      })
+      thisCartProduct.dom.wrapper.dispatchEvent(event);
+    }
+
+    initActions() {
+      const thisCartProduct = this;
+
+      thisCartProduct.dom.edit.addEventListener('click', function(event) {
+        event.preventDefault();
+      })
+      thisCartProduct.dom.remove.addEventListener('click', function(event) {
+        event.preventDefault();
+        thisCartProduct.remove();
+      })
+    }
+
   }
 
   const app = {

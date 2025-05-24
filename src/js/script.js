@@ -67,6 +67,11 @@
   };
   
   const settings = {
+    db: {
+      url: '//localhost:3131',
+      products: 'products',
+      orders: 'orders',
+    },
     amountWidget: {
       defaultValue: 1,
       defaultMin: 1,
@@ -332,7 +337,9 @@
       thisCart.dom.wrapper = element;
       thisCart.dom.productList = thisCart.dom.wrapper.querySelector(select.cart.productList);
       thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger);
-      
+      thisCart.dom.form = thisCart.dom.wrapper.querySelector(select.cart.form);
+      thisCart.dom.phone = thisCart.dom.wrapper.querySelector(select.cart.phone);
+      thisCart.dom.address = thisCart.dom.wrapper.querySelector(select.cart.address);
       thisCart.dom.deliveryFee  = thisCart.dom.wrapper.querySelectorAll(select.cart.deliveryFee);
       thisCart.dom.subtotalPrice  = thisCart.dom.wrapper.querySelectorAll(select.cart.subtotalPrice);
       thisCart.dom.totalPrice  = thisCart.dom.wrapper.querySelectorAll(select.cart.totalPrice);
@@ -351,6 +358,10 @@
       });
       thisCart.dom.productList.addEventListener('remove', function(event) {
         thisCart.remove(event.detail.cartProduct);
+      });
+      thisCart.dom.form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        thisCart.sendOrder()
       });
     }
 
@@ -385,12 +396,42 @@
       }
       let deliveryFee = totalNumber > 0 ? settings.cart.defaultDeliveryFee : 0;
       thisCart.totalPrice =  deliveryFee + subtotalPrice;
-
+      thisCart.totalNumber = totalNumber;
+      thisCart.deliveryFee = deliveryFee;
       thisCart.dom.deliveryFee.forEach(elem => elem.innerHTML = deliveryFee)
       thisCart.dom.subtotalPrice.forEach(elem => elem.innerHTML  = subtotalPrice)
       thisCart.dom.totalPrice.forEach(elem => elem.innerHTML  = thisCart.totalPrice)
       thisCart.dom.totalNumber.forEach(elem => elem.innerHTML  = totalNumber)
     
+    }
+
+    sendOrder() {
+      const thisCart = this;
+      const url = settings.db.url + '/' + settings.db.orders;
+      console.log(url)
+      const payload = {
+        address: thisCart.dom.phone.value,
+        phone: thisCart.dom.phone.value,
+        totalPrice: thisCart.totalPrice,
+        subtotalPrice: thisCart.totalPrice - thisCart.deliveryFee,
+        totalNumber: thisCart.totalNumber,
+        deliveryFee: thisCart.deliveryFee,
+        products: thisCart.products.map(product => 
+          product.getData()
+        )
+      }
+      console.log(payload)
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      };
+
+      fetch(url, options).then(resp => (resp.json())).then(jsonResp => {
+        console.log(jsonResp);
+      })
     }
   }
 
@@ -457,18 +498,35 @@
       })
     }
 
+    getData() {
+      const thisCartProduct = this;
+      const {id, amount, price, priceSingle, name, params} = thisCartProduct;
+      return {id, amount, price, priceSingle, name, params};
+    }
+
   }
 
   const app = {
     initData: function() {
       const thisApp = this;
-      thisApp.data = dataSource;
+      thisApp.data = {};
+      const url = settings.db.url + '/' + settings.db.products;
+            console.log('000000000000000AAAAAAAAAAAA')
+      fetch(url).then(function(rawResponse) {
+        return rawResponse.json();
+      })
+      .then(function(parsedResponse) {
+        console.log(parsedResponse);
+        thisApp.data.products = parsedResponse;
+        thisApp.initMenu()
+      })
+      console.log('AAAAAAAAAAAA')
     },
     initMenu: function() {
       const thisApp = this;
       //console.log('thisApp.data:', thisApp.data);
       for(let productData in thisApp.data.products) {
-        new Product(productData, thisApp.data.products[productData]);
+        new Product(thisApp.data.products[productData].id, thisApp.data.products[productData]);
       }
     },
     initCart: function(){
@@ -485,7 +543,6 @@
       console.log('settings:', settings);
       //console.log('templates:', templates);
       thisApp.initData();
-      thisApp.initMenu();
       thisApp.initCart();
     },
   };

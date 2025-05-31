@@ -1,6 +1,6 @@
-    import { select } from "../settings";
-    import AmountWidget from "./AmountWidget";
-    
+    import { select } from "../settings.js";
+    import AmountWidget from "./AmountWidget.js";
+
     export default class CartProduct {
     constructor(menuProduct, element) {
       const thisCartProduct = this;

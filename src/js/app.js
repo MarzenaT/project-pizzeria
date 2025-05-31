@@ -1,8 +1,20 @@
-import { settings, select } from "./settings";
-import Product from "./components/Product";
-import Cart from "./components/Cart";
+import Product from "./components/Product.js";
+import Cart from "./components/Cart.js";
+import { settings, select } from "./settings.js";
 
    const app = {
+    initPages() {
+      const thisApp = this;
+      thisApp.pages = document.querySelector(select.containerOf.pages).children;
+      thisApp.activatePage(thisApp.pages[0].id);
+    },
+    activatePage: function() {
+      //const thisApp = this;
+
+      /* add class active to matching pages, remove from non-matching*/
+
+      /* add class active to matching links, remove from non-matching*/
+    },
     initData: function() {
       const thisApp = this;
       thisApp.data = {};
@@ -37,6 +49,7 @@ import Cart from "./components/Cart";
     },
     init: function(){
       const thisApp = this;
+      //thisApp.initPages();
       thisApp.initData();
       thisApp.initCart();
     },

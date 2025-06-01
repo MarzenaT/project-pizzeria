@@ -110,7 +110,7 @@ pages: {
     cart: {
       defaultDeliveryFee: 20,
     },
-hours: {
+    hours: {
         open: 12,
         close: 24,
     },

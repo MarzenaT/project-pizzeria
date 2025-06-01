@@ -21,10 +21,10 @@ export default class Booking {
         const thisBooking = this;
         thisBooking.peopleAmountWidget = new AmountWidget(peopleAmountDom );
         thisBooking.hoursAmountWidget = new AmountWidget(hoursAmountDom );
-        thisBooking.dom.peopleAmount.addEventListener('updated', function(e) {
+        thisBooking.dom.peopleAmount.addEventListener('updated', function() {
 
         });
-        thisBooking.dom.hoursAmount.addEventListener('updated', function(e) {
+        thisBooking.dom.hoursAmount.addEventListener('updated', function() {
 
         });
       }

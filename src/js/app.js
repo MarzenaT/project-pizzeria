@@ -75,10 +75,10 @@ import { settings, select, classNames } from "./settings.js";
       })
     },
     initBooking: function() {
-      const thisApp = this;
+      //const thisApp = this;
 
       const bookingContainer = document.querySelector(select.containerOf.booking);
-      const booking = new Booking(bookingContainer);
+      new Booking(bookingContainer);
     },
     init: function(){
       const thisApp = this;
